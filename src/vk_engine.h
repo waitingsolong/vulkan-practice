@@ -6,6 +6,9 @@
 #include <vk_types.h>
 
 struct FrameData {
+    VkSemaphore _swapchainSemaphore, _renderSemaphore;
+    VkFence _renderFence;
+
     // one commandPool per thread so this for multithreading
     VkCommandPool _commandPool;
     VkCommandBuffer _mainCommandBuffer;
