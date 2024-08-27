@@ -82,8 +82,13 @@ public:
     VkQueue _graphicsQueue;
     uint32_t _graphicsQueueFamily;
 
+    //draw resources
+    AllocatedImage _drawImage;
+    VkExtent2D _drawExtent;
+
     // others
     DeletionQueue _mainDeletionQueue;
+    VmaAllocator _allocator;
 
 private:
 
