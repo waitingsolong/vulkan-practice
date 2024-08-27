@@ -5,6 +5,24 @@
 
 #include <vk_types.h>
 
+struct DeletionQueue
+{
+    std::deque<std::function<void()>> deletors;
+
+    void push_function(std::function<void()>&& function) {
+        deletors.push_back(function);
+    }
+
+    void flush() {
+        // reverse iterate the deletion queue to execute all the functions
+        for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+            (*it)(); //call functors
+        }
+
+        deletors.clear();
+    }
+};
+
 struct FrameData {
     VkSemaphore _swapchainSemaphore, _renderSemaphore;
     VkFence _renderFence;
@@ -12,6 +30,8 @@ struct FrameData {
     // one commandPool per thread so this for multithreading
     VkCommandPool _commandPool;
     VkCommandBuffer _mainCommandBuffer;
+
+    DeletionQueue _deletionQueue;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -62,6 +82,8 @@ public:
     VkQueue _graphicsQueue;
     uint32_t _graphicsQueueFamily;
 
+    // others
+    DeletionQueue _mainDeletionQueue;
 
 private:
 

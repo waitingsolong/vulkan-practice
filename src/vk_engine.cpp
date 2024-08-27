@@ -6,12 +6,14 @@
 
 #include <vk_initializers.h>
 #include <vk_types.h>
+#include <vk_images.h>
 
 #include <chrono>
 #include <thread>
 
 #include "VkBootstrap.h"
-#include <vk_images.h>
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
 
 VulkanEngine* loadedEngine = nullptr;
 
@@ -121,7 +123,11 @@ void VulkanEngine::cleanup()
             vkDestroyFence(_device, _frames[i]._renderFence, nullptr);
             vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
             vkDestroySemaphore(_device, _frames[i]._swapchainSemaphore, nullptr);
+            
+            _frames[i]._deletionQueue.flush();
         }
+
+        _mainDeletionQueue.flush();
 
         destroy_swapchain();
 
@@ -141,6 +147,7 @@ void VulkanEngine::draw()
 {
     // wait until the gpu has finished rendering the last frame. Timeout of 1 second
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+    get_current_frame()._deletionQueue.flush();
     VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
     //request image from the swapchain
