@@ -56,6 +56,7 @@ public:
 
 	//draw loop
 	void draw();
+    void draw_background(VkCommandBuffer cmd);
 
 	//run main loop
 	void run();
