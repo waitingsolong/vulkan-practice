@@ -4,6 +4,8 @@
 #pragma once
 
 #include <vk_types.h>
+#include <vk_descriptors.h>
+
 
 struct DeletionQueue
 {
@@ -23,6 +25,7 @@ struct DeletionQueue
     }
 };
 
+
 struct FrameData {
     VkSemaphore _swapchainSemaphore, _renderSemaphore;
     VkFence _renderFence;
@@ -33,6 +36,7 @@ struct FrameData {
 
     DeletionQueue _deletionQueue;
 };
+
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 
@@ -87,6 +91,12 @@ public:
     AllocatedImage _drawImage;
     VkExtent2D _drawExtent;
 
+    // descriptors
+    DescriptorAllocator globalDescriptorAllocator;
+
+    VkDescriptorSet _drawImageDescriptors;
+    VkDescriptorSetLayout _drawImageDescriptorLayout;
+
     // others
     DeletionQueue _mainDeletionQueue;
     VmaAllocator _allocator;
@@ -97,6 +107,7 @@ private:
     void init_swapchain();
     void init_commands();
     void init_sync_structures();
+    void init_descriptors();
 
     void create_swapchain(uint32_t width, uint32_t height);
     void destroy_swapchain();
