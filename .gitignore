@@ -3,6 +3,7 @@
 
 # Custom
 CMakeSettings.json
+*.spv
 
 # User-specific files
 *.suo
