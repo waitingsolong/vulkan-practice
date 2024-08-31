@@ -60,6 +60,7 @@ public:
 
     //draw loop
     void draw();
+    void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
     void draw_background(VkCommandBuffer cmd);
 
     //run main loop
