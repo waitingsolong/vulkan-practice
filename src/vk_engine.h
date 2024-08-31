@@ -15,6 +15,16 @@ struct ComputePushConstants {
 };
 
 
+struct ComputeEffect {
+    const char* name;
+
+    VkPipeline pipeline;
+    VkPipelineLayout layout;
+
+    ComputePushConstants data;
+};
+
+
 struct DeletionQueue
 {
     std::deque<std::function<void()>> deletors;
@@ -120,6 +130,9 @@ public:
     // others
     DeletionQueue _mainDeletionQueue;
     VmaAllocator _allocator;
+
+    std::vector<ComputeEffect> backgroundEffects;
+    int currentBackgroundEffect{ 0 };
 
 private:
 
