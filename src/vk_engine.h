@@ -7,6 +7,14 @@
 #include <vk_types.h>
 
 
+struct ComputePushConstants {
+    glm::vec4 data1;
+    glm::vec4 data2;
+    glm::vec4 data3;
+    glm::vec4 data4;
+};
+
+
 struct DeletionQueue
 {
     std::deque<std::function<void()>> deletors;
