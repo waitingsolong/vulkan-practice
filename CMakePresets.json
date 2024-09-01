@@ -71,14 +71,28 @@
       "name": "build-windows-clang-debug",
       "configurePreset": "windows-clang-debug",
       "targets": [
-        "all", "Shaders"
+        "all"
       ]
     },
     {
       "name": "build-windows-clang-release",
       "configurePreset": "windows-clang-release",
       "targets": [
-        "all", "Shaders"
+        "all"
+      ]
+    },
+    {
+      "name": "build-windows-clang-debug-shaders",
+      "configurePreset": "windows-clang-debug",
+      "targets": [
+        "Shaders"
+      ]
+    },
+    {
+      "name": "build-windows-clang-release-shaders",
+      "configurePreset": "windows-clang-release",
+      "targets": [
+        "Shaders"
       ]
     }
   ]

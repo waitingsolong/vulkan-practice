@@ -78,6 +78,7 @@ public:
 
     //draw loop
     void draw();
+    void draw_geometry(VkCommandBuffer cmd);
     void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
     void draw_background(VkCommandBuffer cmd);
 
@@ -116,9 +117,17 @@ public:
     VkDescriptorSet _drawImageDescriptors;
     VkDescriptorSetLayout _drawImageDescriptorLayout;
 
-    // pipeline
+    // gradient pipeline
     VkPipeline _gradientPipeline;
     VkPipelineLayout _gradientPipelineLayout;
+
+    void init_gradient_pipelines();
+
+    // triangle pipeline 
+    VkPipelineLayout _trianglePipelineLayout;
+    VkPipeline _trianglePipeline;
+
+    void init_triangle_pipeline();
 
     // immediate submit structures
     VkFence _immFence;
