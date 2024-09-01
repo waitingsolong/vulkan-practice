@@ -18,6 +18,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_vulkan.h"
+#include <glm/gtx/transform.hpp>
 
 VulkanEngine* loadedEngine = nullptr;
 
@@ -149,6 +150,11 @@ void VulkanEngine::cleanup()
             vkDestroySemaphore(_device, _frames[i]._swapchainSemaphore, nullptr);
 
             _frames[i]._deletionQueue.flush();
+        }
+
+        for (auto& mesh : testMeshes) {
+            destroy_buffer(mesh->meshBuffers.indexBuffer);
+            destroy_buffer(mesh->meshBuffers.vertexBuffer);
         }
 
         _mainDeletionQueue.flush();
@@ -288,8 +294,10 @@ void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
 
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
+    // triangle
     vkCmdDraw(cmd, 3, 1, 0, 0);
 
+    // single mesh
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _meshPipeline);
 
     GPUDrawPushConstants push_constants;
@@ -300,6 +308,22 @@ void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
     vkCmdBindIndexBuffer(cmd, rectangle.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdDrawIndexed(cmd, 6, 1, 0, 0, 0);
+
+    // monkeyhead
+    glm::mat4 view = glm::translate(glm::vec3{ 0,0,-5 });
+    glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)_drawExtent.width / (float)_drawExtent.height, 10000.f, 0.1f);
+
+    // invert Y
+    projection[1][1] *= -1;
+
+    push_constants.worldMatrix = projection * view;
+
+    push_constants.vertexBuffer = testMeshes[2]->meshBuffers.vertexBufferAddress;
+
+    vkCmdPushConstants(cmd, _meshPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(GPUDrawPushConstants), &push_constants);
+    vkCmdBindIndexBuffer(cmd, testMeshes[2]->meshBuffers.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+    vkCmdDrawIndexed(cmd, testMeshes[2]->surfaces[0].count, 1, testMeshes[2]->surfaces[0].startIndex, 0, 0);
 
     vkCmdEndRendering(cmd);
 }
@@ -949,6 +973,7 @@ GPUMeshBuffers VulkanEngine::uploadMesh(std::span<uint32_t> indices, std::span<V
 }
 
 void VulkanEngine::init_default_data() {
+    // rectangle
     std::array<Vertex, 4> rect_vertices;
 
     rect_vertices[0].position = { 0.5,-0.5, 0 };
@@ -973,10 +998,11 @@ void VulkanEngine::init_default_data() {
 
     rectangle = uploadMesh(rect_indices, rect_vertices);
 
-    //delete the rectangle data on engine shutdown
     _mainDeletionQueue.push_function([&]() {
         destroy_buffer(rectangle.indexBuffer);
         destroy_buffer(rectangle.vertexBuffer);
         });
 
+    // meshes 
+    testMeshes = loadGltfMeshes(this, "..\\assets\\basicmesh.glb").value();
 }

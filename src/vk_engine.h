@@ -4,6 +4,7 @@
 #pragma once
 
 #include <vk_descriptors.h>
+#include <vk_loader.h>
 #include <vk_types.h>
 
 
@@ -140,6 +141,8 @@ public:
     VkPipeline _meshPipeline;
 
     GPUMeshBuffers rectangle;
+
+    std::vector<std::shared_ptr<MeshAsset>> testMeshes;
 
     void init_mesh_pipeline();
 
