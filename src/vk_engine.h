@@ -117,6 +117,12 @@ public:
     VkDescriptorSet _drawImageDescriptors;
     VkDescriptorSetLayout _drawImageDescriptorLayout;
 
+    // buffers
+    AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+    void destroy_buffer(const AllocatedBuffer& buffer);
+
+    GPUMeshBuffers uploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices);
+
     // gradient pipeline
     VkPipeline _gradientPipeline;
     VkPipelineLayout _gradientPipelineLayout;
@@ -128,6 +134,14 @@ public:
     VkPipeline _trianglePipeline;
 
     void init_triangle_pipeline();
+
+    // mesh pipeline 
+    VkPipelineLayout _meshPipelineLayout;
+    VkPipeline _meshPipeline;
+
+    GPUMeshBuffers rectangle;
+
+    void init_mesh_pipeline();
 
     // immediate submit structures
     VkFence _immFence;
@@ -142,6 +156,8 @@ public:
 
     std::vector<ComputeEffect> backgroundEffects;
     int currentBackgroundEffect{ 0 };
+
+    void init_default_data();
 
 private:
 
