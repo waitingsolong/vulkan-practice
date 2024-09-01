@@ -207,6 +207,7 @@ void VulkanEngine::draw()
     draw_background(cmd);
 
     vkutil::transition_image(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    vkutil::transition_image(cmd, _depthImage.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
     draw_geometry(cmd);
 
@@ -268,9 +269,11 @@ void VulkanEngine::draw()
 void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
 {
     //begin a render pass  connected to our draw image
-    VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(_drawImage.imageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(_drawImage.imageView, nullptr, VK_IMAGE_LAYOUT_GENERAL);
+    VkRenderingAttachmentInfo depthAttachment = vkinit::depth_attachment_info(_depthImage.imageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
-    VkRenderingInfo renderInfo = vkinit::rendering_info(_drawExtent, &colorAttachment, nullptr);
+    VkRenderingInfo renderInfo = vkinit::rendering_info(_windowExtent, &colorAttachment, &depthAttachment);
+
     vkCmdBeginRendering(cmd, &renderInfo);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _trianglePipeline);
@@ -449,6 +452,10 @@ void VulkanEngine::init_swapchain()
         1
     };
 
+    // ==============
+    //  draw image 
+    // ==============
+
     //hardcoding the draw format to 32 bit float
     _drawImage.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
     _drawImage.imageExtent = drawImageExtent;
@@ -474,10 +481,31 @@ void VulkanEngine::init_swapchain()
 
     VK_CHECK(vkCreateImageView(_device, &rview_info, nullptr, &_drawImage.imageView));
 
+    // ==============
+    // depth image 
+    // ==============
+    _depthImage.imageFormat = VK_FORMAT_D32_SFLOAT;
+    _depthImage.imageExtent = drawImageExtent;
+    VkImageUsageFlags depthImageUsages{};
+    depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VkImageCreateInfo dimg_info = vkinit::image_create_info(_depthImage.imageFormat, depthImageUsages, drawImageExtent);
+
+    //allocate and create the image
+    vmaCreateImage(_allocator, &dimg_info, &rimg_allocinfo, &_depthImage.image, &_depthImage.allocation, nullptr);
+
+    //build a image-view for the draw image to use for rendering
+    VkImageViewCreateInfo dview_info = vkinit::imageview_create_info(_depthImage.imageFormat, _depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VK_CHECK(vkCreateImageView(_device, &dview_info, nullptr, &_depthImage.imageView));
+
     //add to deletion queues
     _mainDeletionQueue.push_function([=]() {
         vkDestroyImageView(_device, _drawImage.imageView, nullptr);
         vmaDestroyImage(_allocator, _drawImage.image, _drawImage.allocation);
+
+        vkDestroyImageView(_device, _depthImage.imageView, nullptr);
+        vmaDestroyImage(_allocator, _depthImage.image, _depthImage.allocation);
         });
 }
 
@@ -719,12 +747,12 @@ void VulkanEngine::init_triangle_pipeline() {
     pipelineBuilder.set_multisampling_none();
     //no blending
     pipelineBuilder.disable_blending();
-    //no depth testing
-    pipelineBuilder.disable_depthtest();
+
+    pipelineBuilder.enable_depthtest(true, VK_COMPARE_OP_GREATER_OR_EQUAL);
 
     //connect the image format we will draw into, from draw image
     pipelineBuilder.set_color_attachment_format(_drawImage.imageFormat);
-    pipelineBuilder.set_depth_format(VK_FORMAT_UNDEFINED);
+    pipelineBuilder.set_depth_format(_depthImage.imageFormat);
 
     //finally build the pipeline
     _trianglePipeline = pipelineBuilder.build_pipeline(_device);
@@ -784,11 +812,11 @@ void VulkanEngine::init_mesh_pipeline() {
     //no blending
     pipelineBuilder.disable_blending();
 
-    pipelineBuilder.disable_depthtest();
+    pipelineBuilder.enable_depthtest(true, VK_COMPARE_OP_GREATER_OR_EQUAL);
 
     //connect the image format we will draw into, from draw image
     pipelineBuilder.set_color_attachment_format(_drawImage.imageFormat);
-    pipelineBuilder.set_depth_format(VK_FORMAT_UNDEFINED);
+    pipelineBuilder.set_depth_format(_depthImage.imageFormat);
 
     //finally build the pipeline
     _meshPipeline = pipelineBuilder.build_pipeline(_device);
